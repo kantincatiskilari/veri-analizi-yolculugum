@@ -204,3 +204,98 @@ print(f'Ortalama Sipariş    : {df_clean["Total"].mean():>10,.2f}')
 print(f'En Çok Satan Ürün   : {df_clean["Product"].value_counts().index[0]}')
 print(f'En Yüksek Gelir     : {df_clean["Total"].max():>10,.2f}')
 print(f'İptal/İade Oranı    : %{((df_clean["Status"].isin(["Cancelled","Returned"])).sum()/len(df_clean)*100):.1f}')
+
+# Veriyi hazırla
+aylik = (
+    df_clean.dropna(subset=['Month'])
+    .groupby('Month')['Total']
+    .sum()
+    .reindex(range(1, 13), fill_value=0)
+)
+ay_isimleri = ['Oca','Şub','Mar','Nis','May','Haz','Tem','Ağu','Eyl','Eki','Kas','Ara']
+genel_hedef = aylik.mean()
+
+# Koşullu renk: hedef üstü yeşil, altı kırmızı
+renk_listesi = ['#2ecc71' if v > genel_hedef else '#e74c3c' for v in aylik.values]
+
+# GridSpec ile 3 panelli layout
+from matplotlib.gridspec import GridSpec
+fig = plt.figure(figsize=(16, 10))
+gs  = GridSpec(2, 2, figure=fig, hspace=0.4, wspace=0.3)
+
+ax_ust  = fig.add_subplot(gs[0, :])   # üst: tüm genişlik
+ax_sol  = fig.add_subplot(gs[1, 0])   # sol alt
+ax_sag  = fig.add_subplot(gs[1, 1])   # sağ alt
+
+# ── ÜST: Aylık satış bar + annotasyon + axhline ────────────────────
+bars = ax_ust.bar(ay_isimleri, aylik.values, color=renk_listesi,
+                  width=0.6, alpha=0.85)
+
+# Çubuk üstü etiketler
+for bar in bars:
+    h = bar.get_height()
+    if h > 0:
+        ax_ust.text(
+            bar.get_x() + bar.get_width() / 2,
+            h + 150,
+            f'{h:,.0f}',
+            ha='center', va='bottom', fontsize=8, fontweight='bold'
+        )
+
+# Ortalama referans çizgisi
+ax_ust.axhline(y=genel_hedef, color='black', linestyle='--',
+               linewidth=1.5, alpha=0.6,
+               label=f'Aylık Ortalama ({genel_hedef:,.0f} TL)')
+
+# Zirve annotasyonu
+max_ay_idx = list(aylik.values).index(max(aylik.values))
+ax_ust.annotate(
+    f'Zirve\n{max(aylik.values):,.0f} TL',
+    xy=(max_ay_idx, max(aylik.values)),
+    xytext=(max_ay_idx - 2, max(aylik.values) - 2000),
+    fontsize=9, fontweight='bold', color='darkgreen',
+    arrowprops=dict(arrowstyle='->', color='darkgreen', lw=1.5),
+    bbox=dict(boxstyle='round,pad=0.3', facecolor='#eafaf1',
+              edgecolor='darkgreen', alpha=0.9)
+)
+
+ax_ust.set_title('Aylık Satış Performansı', fontsize=13, fontweight='bold')
+ax_ust.set_ylabel('Toplam Satış (TL)')
+ax_ust.set_ylim(0, max(aylik.values) * 1.2)
+ax_ust.legend(loc='upper left', fontsize=9)
+for spine in ['top', 'right']:
+    ax_ust.spines[spine].set_visible(False)
+
+# ── SOL ALT: Kategoriye göre satış ────────────────────────────────
+cat_sales = df_clean.groupby('Category')['Total'].sum().sort_values()
+palet = sns.color_palette("colorblind", n_colors=len(cat_sales))
+ax_sol.barh(cat_sales.index, cat_sales.values, color=palet, alpha=0.85)
+for i, v in enumerate(cat_sales.values):
+    ax_sol.text(v + 200, i, f'{v:,.0f}', va='center', fontsize=9)
+ax_sol.set_title('Kategoriye Göre Toplam Satış', fontsize=11, fontweight='bold')
+ax_sol.set_xlabel('Toplam Satış (TL)')
+ax_sol.set_xlim(0, max(cat_sales.values) * 1.2)
+for spine in ['top', 'right']:
+    ax_sol.spines[spine].set_visible(False)
+
+# ── SAĞ ALT: Ödeme yöntemi pasta ──────────────────────────────────
+odeme = df_clean['Payment_Method'].value_counts()
+renkler_pasta = sns.color_palette("colorblind", n_colors=len(odeme))
+ax_sag.pie(
+    odeme.values,
+    labels=odeme.index,
+    autopct='%1.1f%%',
+    colors=renkler_pasta,
+    startangle=90,
+    pctdistance=0.75
+)
+ax_sag.set_title('Ödeme Yöntemi Dağılımı', fontsize=11, fontweight='bold')
+
+# ── ANA BAŞLIK ──────────────────────────────────────────────────────
+fig.suptitle('E-Commerce Satış Dashboard — 2024/2025',
+             fontsize=16, fontweight='bold', y=1.01)
+
+plt.savefig('ecommerce_dashboard.png', dpi=300,
+            bbox_inches='tight', facecolor='white')
+plt.show()
+print('Dashboard kaydedildi: ecommerce_dashboard.png')
