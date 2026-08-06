@@ -427,4 +427,11 @@ plt.show()
 n_95 = np.argmax(cumulative_var >= 0.95) + 1
 print(f"Varyansın %95'ini korumak için yeterli bileşen sayısı: {n_95} / {X_house.shape[1]}")
 
-"""Gözlem: 8 özelliğin tamamını taşımak yerine, çok daha az sayıda "tekil bileşenle" verinin büyük kısmı korunabiliyor. Bu, SVD'nin PCA ile aynı özü taşıdığını ama daha genel ve sayısal olarak daha kararlı bir formda olduğunu gösterir."""
+"""Gözlem: 8 özelliğin tamamını taşımak yerine, çok daha az sayıda "tekil bileşenle" verinin büyük kısmı korunabiliyor. Bu, SVD'nin PCA ile aynı özü taşıdığını ama daha genel ve sayısal olarak daha kararlı bir formda olduğunu gösterir.
+
+Boyut İndirgeme (Dimensionality Reduction): Temel Bileşenler Analizi'nin (PCA) arkasındaki matematiksel motor SVD'dir. Yüksek boyutlu verileri grafiksel olarak görselleştirmek veya modeli hızlandırmak için kullanılır.
+
+Gürültü Temizleme (Denoising): Küçük tekil değerler genellikle verideki "gürültüyü" temsil eder. Bunlar elenerek verinin temiz hali elde edilir.
+
+Doğal Dil İşleme (NLP): Metin madenciliğinde kelime-doküman matrislerinden anlamsal ilişkiler çıkarmak (Latent Semantic Analysis - LSA) için uygulanır.
+"""
